@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>B2C 채널 판매 분석 대시보드</title>
+<title>JOHN · 신선식품 드롭셔핑 운영 대시보드</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -89,8 +89,8 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
 
 <div class="header">
   <div>
-    <h1>B2C <span>채널 판매 분석</span> 대시보드</h1>
-    <div class="header-meta">구글시트 실시간 연동 · 배송비 제외 · 거래처명 원본 유지</div>
+    <h1>JOHN <span>신선식품 드롭셔핑</span> 운영 대시보드</h1>
+    <div class="header-meta">Google Sheets 실시간 연동 · 마진 목표 10~15% · JOHN_SYSTEM 20_BUSINESS</div>
   </div>
   <button class="refresh-btn" onclick="location.reload()">🔄 새로고침</button>
 </div>
@@ -144,6 +144,29 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
   <span class="date-range-display" id="dateRangeLabel"></span>
 </div>
 
+<div style="padding:12px 32px;">
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+    <span style="font-size:12px;font-weight:600;color:var(--text-muted);">💰 마진 설정</span>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:11px;color:var(--text-muted);">공급가 비율(%):</label>
+      <input type="number" id="inputCostRatio" value="78" min="50" max="95" step="1" style="width:55px;text-align:center;padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--card-border);border-radius:4px;color:var(--text);" onchange="updateMarginDisplay()">
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:11px;color:var(--text-muted);">채널수수료(%):</label>
+      <input type="number" id="inputFeeRate" value="12" min="0" max="30" step="0.5" style="width:55px;text-align:center;padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--card-border);border-radius:4px;color:var(--text);" onchange="updateMarginDisplay()">
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:11px;color:var(--text-muted);">택배비/건(₩):</label>
+      <input type="number" id="inputDelivery" value="3500" min="0" max="10000" step="100" style="width:70px;text-align:center;padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--card-border);border-radius:4px;color:var(--text);" onchange="updateMarginDisplay()">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--text-muted);">추정 마진율:</span>
+      <span id="marginBadge" style="font-size:13px;font-weight:700;padding:2px 10px;border-radius:5px;background:rgba(16,185,129,0.15);color:var(--green);">10%</span>
+      <span style="font-size:10px;color:var(--text-muted);">(목표: 10~15%)</span>
+    </div>
+  </div>
+</div>
+
 <div class="charts-area">
   <div class="chart-card">
     <h3 id="mainChartTitle">월별 채널 판매 추이</h3>
@@ -153,13 +176,13 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
   </div>
   <div class="two-col">
     <div class="chart-card">
-      <h3>채널 매출 비중</h3>
+      <h3 id="pieChartTitle">채널 매출 비중</h3>
       <div class="subtitle" id="pieSub">선택기간 매출 기준</div>
       <div class="chart-container" style="height:300px;"><canvas id="pieChart"></canvas></div>
     </div>
     <div class="chart-card">
-      <h3>🔥 프로모션 시그널 탐지</h3>
-      <div class="subtitle">일 평균 대비 N배 이상 스파이크</div>
+      <h3>🔍 급등 주문 탐지</h3>
+      <div class="subtitle">일 평균 대비 N배 이상 급등 — 프로모션/특가 시그널</div>
       <div class="spike-controls">
         <select id="spikeChannelFilter" onchange="renderSpikes()"><option value="all">전체 채널</option></select>
         <div class="spike-threshold">
@@ -175,7 +198,7 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
     </div>
   </div>
   <div class="chart-card">
-    <h3 id="productChartTitle">품목 판매 추이</h3>
+    <h3 id="productChartTitle">SKU 판매 추이</h3>
     <div class="subtitle" id="productChartSub">품목별 판매 시계열</div>
     <div class="chart-filter-row" id="productChFilter">
       <span class="filter-label">채널:</span>
@@ -186,8 +209,8 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
     <div class="legend-custom" id="productLegend"></div>
   </div>
   <div class="chart-card">
-    <h3>채널별 월 평균 vs 최대 판매량</h3>
-    <div class="subtitle">평균 대비 최대치 갭 = 프로모션 잠재력</div>
+    <h3>채널별 성과 편차 (평균 vs 최대)</h3>
+    <div class="subtitle">평균 대비 최대치 갭 = 시즌 프로모션 잠재력</div>
     <div class="chart-container" style="height:320px;"><canvas id="avgMaxChart"></canvas></div>
     <div class="legend-custom" id="avgMaxLegend"></div>
   </div>
@@ -215,8 +238,8 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
     <h3>🎯 목표 대비 달성률</h3>
     <div class="subtitle">연간/월간 목표 설정 → 달성률 자동 계산</div>
     <div class="chart-filter-row" id="goalControls">
-      <span class="filter-label">연간 매출 목표(억):</span>
-      <input type="number" id="goalAnnual" value="60" min="1" step="1" style="width:60px;text-align:center;padding:4px 6px;font-size:12px;background:var(--card);border:1px solid var(--card-border);border-radius:4px;color:var(--text);" onchange="renderGauges()">
+      <span class="filter-label">연간 매출 목표(억원):</span>
+      <input type="number" id="goalAnnual" value="1.2" min="0.1" step="0.1" style="width:60px;text-align:center;padding:4px 6px;font-size:12px;background:var(--card);border:1px solid var(--card-border);border-radius:4px;color:var(--text);" onchange="renderGauges()">
       <span class="filter-label" style="margin-left:8px;">기준연도:</span>
       <select id="goalYear" onchange="renderGauges()" style="min-width:80px;">
         <option value="2024">2024</option>
@@ -233,6 +256,8 @@ button.secondary.active{background:var(--accent);border-color:var(--accent)}
 
 </div>
 
+<div style="padding:16px 32px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--card-border);margin-top:8px;">JOHN_SYSTEM 20_BUSINESS · 신선식품 드롭셔핑 대시보드 · 마진 기준: pricing_margin.md</div>
+
 <script>
 const SHEET_JSON_URL = 'https://script.google.com/macros/s/AKfycbwc87x2asL6QRbzmBeSq7DN1tsSzVe5SAO6QstgQPDLXeADTN5Td7IsV8j1RZUuN-5oCg/exec';
 
@@ -240,6 +265,9 @@ const COLORS=['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#06b6
 
 let DATA = null;
 let currentView='monthly',currentMetric='qty';
+let costRatio = 0.78;
+let channelFeeRate = 0.12;
+let deliveryPerOrder = 3500;
 let mainChart,pieChart,productChart,avgMaxChart,yoyChart;
 let yoyMetric='qty';
 let yoyPeriod='monthly';
@@ -381,18 +409,43 @@ function setMetric(m){currentMetric=m;document.querySelectorAll('#metricTabs but
 function fmt(n){if(n>=1e8)return(n/1e8).toFixed(1)+'억';if(n>=1e4)return(n/1e4).toFixed(0)+'만';return n.toLocaleString()}
 function setProductChFilter(ch){productChFilter=ch;document.querySelectorAll('#productChFilter .ch-btn').forEach(b=>b.classList.toggle('active',b.dataset.pch===ch));renderProductChart()}
 
+function updateMarginDisplay(){
+  const inputCost=parseFloat(document.getElementById('inputCostRatio').value)||78;
+  const inputFee=parseFloat(document.getElementById('inputFeeRate').value)||12;
+  const inputDel=parseFloat(document.getElementById('inputDelivery').value)||3500;
+  costRatio=inputCost/100;
+  channelFeeRate=inputFee/100;
+  deliveryPerOrder=inputDel;
+  const estimatedMargin=100-inputCost-inputFee;
+  const badge=document.getElementById('marginBadge');
+  if(badge){
+    badge.textContent=estimatedMargin.toFixed(1)+'%';
+    if(estimatedMargin>=10){badge.style.background='rgba(16,185,129,0.15)';badge.style.color='var(--green)'}
+    else if(estimatedMargin>=5){badge.style.background='rgba(245,158,11,0.15)';badge.style.color='var(--orange)'}
+    else{badge.style.background='rgba(239,68,68,0.15)';badge.style.color='var(--red)'}
+  }
+  if(DATA)renderKPIs();
+}
+
 function renderKPIs(){
   let fTotal=0,fQty=0;DATA.dailyTotal.forEach(d=>{if(inRange(d.date)){fTotal+=d.total;fQty+=d.qty}});
   const activeChs=new Set();for(const[date,chs]of Object.entries(DATA.dailyChannel)){if(inRange(date))Object.keys(chs).forEach(c=>activeChs.add(c))}
-  const days=DATA.dailyTotal.filter(d=>inRange(d.date)).length;const avgQ=days?Math.round(fQty/days):0,avgR=days?Math.round(fTotal/days):0;
+  const days=DATA.dailyTotal.filter(d=>inRange(d.date)).length;
   const totalAll=DATA.channels.reduce((s,c)=>s+c.total,0),qtyAll=DATA.channels.reduce((s,c)=>s+c.qty,0);
-  const top2pct=DATA.channels.length>=2?((DATA.channels[0].total+DATA.channels[1].total)/totalAll*100).toFixed(1):'0';
+  // Margin estimates
+  const estimatedCost=fTotal*costRatio;
+  const estimatedFee=fTotal*channelFeeRate;
+  const estimatedDelivery=fQty*deliveryPerOrder;
+  const estimatedProfit=fTotal-estimatedCost-estimatedFee-estimatedDelivery;
+  const estimatedMarginPct=fTotal>0?(estimatedProfit/fTotal*100):0;
+  const marginColor=estimatedMarginPct>=10?'var(--green)':estimatedMarginPct>=5?'var(--orange)':'var(--red)';
   document.getElementById('kpiRow').innerHTML=`
     <div class="kpi"><div class="kpi-label">선택기간 매출</div><div class="kpi-value">₩${fmt(fTotal)}</div><div class="kpi-sub">${activeChs.size}개 채널</div></div>
     <div class="kpi"><div class="kpi-label">선택기간 수량</div><div class="kpi-value">${fQty.toLocaleString()}</div><div class="kpi-sub">${days}일간</div></div>
-    <div class="kpi"><div class="kpi-label">일 평균 수량</div><div class="kpi-value">${avgQ.toLocaleString()}</div><div class="kpi-sub">일 평균 매출 ₩${fmt(avgR)}</div></div>
-    <div class="kpi"><div class="kpi-label">전체 매출</div><div class="kpi-value">₩${fmt(totalAll)}</div><div class="kpi-sub">전체 ${qtyAll.toLocaleString()}개</div></div>
-    <div class="kpi"><div class="kpi-label">전체 채널</div><div class="kpi-value">${DATA.channels.length}</div><div class="kpi-sub">Top2 점유 ${top2pct}%</div></div>`;
+    <div class="kpi"><div class="kpi-label">추정 영업이익률</div><div class="kpi-value" style="color:${marginColor}">${estimatedMarginPct.toFixed(1)}%</div><div class="kpi-sub">목표 10~15%</div></div>
+    <div class="kpi"><div class="kpi-label">추정 영업이익</div><div class="kpi-value" style="color:${marginColor}">₩${fmt(Math.max(estimatedProfit,0))}</div><div class="kpi-sub">매출 기준 추정</div></div>
+    <div class="kpi"><div class="kpi-label">활성 채널 수</div><div class="kpi-value">${activeChs.size}</div><div class="kpi-sub">선택기간 기준</div></div>
+    <div class="kpi"><div class="kpi-label">전체 채널 수</div><div class="kpi-value">${DATA.channels.length}</div><div class="kpi-sub">전체 ${qtyAll.toLocaleString()}개</div></div>`;
 }
 
 function getTop10(){return DATA.channels.slice(0,10).map(c=>c.name)}
@@ -412,7 +465,7 @@ function buildLegend(cid,names,hiddenSet,onToggle){
 function renderMainChart(){
   const chF=document.getElementById('channelFilter').value,met=currentMetric,top10=getTop10();
   const metL=met==='qty'?'수량':'매출',viewL=currentView==='monthly'?'월별':'일별';
-  document.getElementById('mainChartTitle').textContent=`${viewL} 채널 판매 추이`;
+  document.getElementById('mainChartTitle').textContent=currentView==='monthly'?'채널별 매출 추이':'채널별 일별 추이';
   document.getElementById('mainChartSub').textContent=`채널별 ${metL} 시계열 · 스파이크 = 프로모션 시그널`;
   let labels,datasets;
   if(currentView==='monthly'){
@@ -458,7 +511,7 @@ function getProductMonthlyData(month,product){
 function renderProductChart(){
   const pF=document.getElementById('productFilter').value,months=Object.keys(DATA.monthlyProduct).filter(inMonthRange).sort(),met=currentMetric;
   const chLabel=productChFilter==='all'?'전체':productChFilter;
-  document.getElementById('productChartTitle').textContent=`품목 판매 추이 — ${chLabel}`;
+  document.getElementById('productChartTitle').textContent=`SKU 판매 추이 — ${chLabel}`;
   document.getElementById('productChartSub').textContent=`${chLabel} 채널 · 품목별 ${met==='qty'?'수량':'매출'} 시계열`;
   if(productChart)productChart.destroy();
   if(pF==='all'){
